@@ -25,30 +25,39 @@ function toast(t){let x=document.querySelector('#toast');x.textContent=t;x.class
 renderCats();renderProducts();updateCart();
 
 
-async function startCheckout(){
-  if(!cart.length){toast('Adicione pelo menos um produto ao carrinho.');return;}
-  const savedEmail=localStorage.getItem('lumeBuyerEmail')||'';
-  const payerEmail=prompt('Digite o e-mail do COMPRADOR DE TESTE do Mercado Pago:',savedEmail);
-  if(!payerEmail)return;
-  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payerEmail.trim())){toast('Digite um e-mail válido.');return;}
-  localStorage.setItem('lumeBuyerEmail',payerEmail.trim());
-  const btn=document.querySelector('#checkoutBtn');
-  const old=btn.textContent;
-  btn.disabled=true;btn.textContent='Preparando pagamento...';
-  try{
-    const response=await fetch('/api/create-order',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({payer_email:payerEmail.trim(),items:cart.map(({id,q})=>({id,quantity:q}))})
-    });
-    const raw=await response.text();
-    let data;
-    try{data=raw?JSON.parse(raw):{};}catch{throw new Error('A API da loja respondeu em formato inválido. HTTP '+response.status+'. '+raw.slice(0,160));}
-    if(!response.ok) throw new Error((data.error||'Não foi possível iniciar o pagamento.')+(data.details?' '+data.details:''));
-    if(!data.checkout_url) throw new Error('Mercado Pago não retornou checkout_url.');
-    localStorage.setItem('lumeLastOrder',JSON.stringify({order_id:data.order_id,reference:data.external_reference,createdAt:Date.now()}));
-    window.location.href=data.checkout_url;
-  }catch(err){
-    console.error(err);toast(err.message||'Erro ao abrir o checkout.');
-    btn.disabled=false;btn.textContent=old;
-  }
+const checkoutFieldIds=['coName','coEmail','coPhone','coCep','coStreet','coNumber','coDistrict','coCity','coUf'];
+function onlyDigits(v){return String(v||'').replace(/\D/g,'')}
+function formatPhone(v){const d=onlyDigits(v).slice(0,11);if(d.length<=10)return d.replace(/(\d{2})(\d{0,4})(\d{0,4})/,'($1) $2-$3').replace(/[- ]+$/,'');return d.replace(/(\d{2})(\d{0,5})(\d{0,4})/,'($1) $2-$3').replace(/[- ]+$/,'')}
+function formatCep(v){const d=onlyDigits(v).slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
+function getCustomer(){return {name:coName.value.trim(),email:coEmail.value.trim().toLowerCase(),phone:coPhone.value.trim(),cep:coCep.value.trim(),street:coStreet.value.trim(),number:coNumber.value.trim(),complement:coComplement.value.trim(),district:coDistrict.value.trim(),city:coCity.value.trim(),uf:coUf.value.trim()}}
+function fillCustomer(c={}){coName.value=c.name||'';coEmail.value=c.email||'';coPhone.value=c.phone||'';coCep.value=c.cep||'';coStreet.value=c.street||'';coNumber.value=c.number||'';coComplement.value=c.complement||'';coDistrict.value=c.district||'';coCity.value=c.city||'';coUf.value=c.uf||''}
+function startCheckout(){
+  if(!cart.length){toast('Adicione pelo menos um produto ao carrinho.');return}
+  try{fillCustomer(JSON.parse(localStorage.getItem('lumeCustomer')||'{}'))}catch(e){}
+  document.querySelector('#cart').classList.remove('open');document.querySelector('#overlay').classList.remove('show');
+  checkoutModal.classList.add('open');checkoutModal.setAttribute('aria-hidden','false');backToDelivery();setTimeout(()=>coName.focus(),100)
 }
+function closeCheckout(){checkoutModal.classList.remove('open');checkoutModal.setAttribute('aria-hidden','true')}
+function validateDelivery(){
+  document.querySelectorAll('#deliveryForm .invalid').forEach(x=>x.classList.remove('invalid'));
+  const c=getCustomer();let bad=[];
+  if(c.name.length<3)bad.push(coName);if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(c.email))bad.push(coEmail);
+  if(onlyDigits(c.phone).length<10)bad.push(coPhone);if(onlyDigits(c.cep).length!==8)bad.push(coCep);
+  if(!c.street)bad.push(coStreet);if(!c.number)bad.push(coNumber);if(!c.district)bad.push(coDistrict);if(!c.city)bad.push(coCity);if(!/^[A-Z]{2}$/.test(c.uf))bad.push(coUf);
+  bad.forEach(x=>x.classList.add('invalid'));if(!coPrivacy.checked){toast('Confirme os dados para entrega.');return false}
+  if(bad.length){toast('Preencha corretamente os campos obrigatórios.');bad[0].focus();return false}return true
+}
+async function lookupCep(){
+  const cep=onlyDigits(coCep.value);if(cep.length!==8){coCep.classList.add('invalid');cepStatus.textContent='Informe um CEP com 8 dígitos.';return}
+  cepStatus.textContent='Buscando CEP...';
+  try{const r=await fetch('https://viacep.com.br/ws/'+cep+'/json/');const d=await r.json();if(!r.ok||d.erro)throw new Error('CEP não encontrado');coStreet.value=d.logradouro||coStreet.value;coDistrict.value=d.bairro||coDistrict.value;coCity.value=d.localidade||coCity.value;coUf.value=d.uf||coUf.value;cepStatus.textContent='CEP localizado.';coNumber.focus()}catch(e){cepStatus.textContent='Não foi possível localizar o CEP. Preencha o endereço manualmente.'}
+}
+function reviewCheckout(e){e.preventDefault();if(!validateDelivery())return;const c=getCustomer();localStorage.setItem('lumeCustomer',JSON.stringify(c));reviewItems.innerHTML=cart.map(x=>`<div class="reviewItem"><img src="${x.img}" alt=""><div><b>${x.name}</b><small>${x.q} × ${money(x.price)}</small></div><strong>${money(x.price*x.q)}</strong></div>`).join('');reviewName.textContent=c.name;reviewAddress.textContent=`${c.street}, ${c.number}${c.complement?' - '+c.complement:''} · ${c.district} · ${c.city}/${c.uf} · CEP ${c.cep}`;reviewContact.textContent=`${c.email} · ${c.phone}`;reviewTotal.textContent=money(cart.reduce((a,b)=>a+b.price*b.q,0));deliveryStep.hidden=true;reviewStep.hidden=false;stepDot1.classList.remove('active');stepDot2.classList.add('active');checkoutPanelTop()}
+function checkoutPanelTop(){document.querySelector('.checkoutPanel').scrollTo({top:0,behavior:'smooth'})}
+function backToDelivery(){deliveryStep.hidden=false;reviewStep.hidden=true;stepDot1.classList.add('active');stepDot2.classList.remove('active');checkoutPanelTop()}
+async function submitPayment(){
+  const customer=getCustomer();const btn=document.querySelector('#payBtn');const old=btn.textContent;btn.disabled=true;btn.textContent='Preparando pagamento...';
+  const pending={customer,items:cart.map(x=>({id:x.id,name:x.name,quantity:x.q,unit_price:x.price,image:x.img})),total:cart.reduce((a,b)=>a+b.price*b.q,0),createdAt:Date.now()};localStorage.setItem('lumePendingOrder',JSON.stringify(pending));
+  try{const response=await fetch('/api/create-order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({payer_email:customer.email,customer,items:cart.map(({id,q})=>({id,quantity:q}))})});const raw=await response.text();let data;try{data=raw?JSON.parse(raw):{}}catch{throw new Error('A API da loja respondeu em formato inválido. HTTP '+response.status+'. '+raw.slice(0,160))}if(!response.ok)throw new Error((data.error||'Não foi possível iniciar o pagamento.')+(data.details?' '+data.details:''));if(!data.checkout_url)throw new Error('Mercado Pago não retornou checkout_url.');localStorage.setItem('lumeLastOrder',JSON.stringify({order_id:data.order_id,reference:data.external_reference,createdAt:Date.now()}));window.location.href=data.checkout_url}catch(err){console.error(err);toast(err.message||'Erro ao abrir o checkout.');btn.disabled=false;btn.textContent=old}
+}
+coPhone?.addEventListener('input',e=>e.target.value=formatPhone(e.target.value));coCep?.addEventListener('input',e=>e.target.value=formatCep(e.target.value));coCep?.addEventListener('blur',()=>{if(onlyDigits(coCep.value).length===8&&!coStreet.value)lookupCep()});

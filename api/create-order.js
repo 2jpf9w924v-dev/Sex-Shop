@@ -18,8 +18,14 @@ module.exports = async function handler(req,res){
 
   try{
     const requested=Array.isArray(req.body?.items)?req.body.items:[];
-    const email=String(req.body?.payer_email||'').trim().toLowerCase();
+    const customer=req.body?.customer||{};
+    const email=String(customer.email||req.body?.payer_email||'').trim().toLowerCase();
+    const required=['name','phone','cep','street','number','district','city','uf'];
+    const missing=required.filter(k=>!String(customer[k]||'').trim());
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return res.status(400).json({error:'Informe um e-mail válido para o comprador.'});
+    if(missing.length) return res.status(400).json({error:'Dados obrigatórios de entrega incompletos.',details:'Campos: '+missing.join(', ')});
+    if(String(customer.cep||'').replace(/\D/g,'').length!==8) return res.status(400).json({error:'CEP inválido.'});
+    if(String(customer.phone||'').replace(/\D/g,'').length<10) return res.status(400).json({error:'Telefone inválido.'});
 
     let total=0;
     const items=requested.map(x=>{
