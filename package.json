@@ -1,1 +1,0 @@
-{"name":"lume-sexshop-v5","version":"5.0.0","private":true,"scripts":{"dev":"node local-server.js"},"engines":{"node":">=18"}}
