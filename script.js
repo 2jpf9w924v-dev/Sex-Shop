@@ -40,7 +40,9 @@ async function startCheckout(){
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({payer_email:payerEmail.trim(),items:cart.map(({id,q})=>({id,quantity:q}))})
     });
-    const data=await response.json();
+    const raw=await response.text();
+    let data;
+    try{data=raw?JSON.parse(raw):{};}catch{throw new Error('A API da loja respondeu em formato inválido. HTTP '+response.status+'. '+raw.slice(0,160));}
     if(!response.ok) throw new Error((data.error||'Não foi possível iniciar o pagamento.')+(data.details?' '+data.details:''));
     if(!data.checkout_url) throw new Error('Mercado Pago não retornou checkout_url.');
     localStorage.setItem('lumeLastOrder',JSON.stringify({order_id:data.order_id,reference:data.external_reference,createdAt:Date.now()}));
