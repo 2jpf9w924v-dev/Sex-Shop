@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/admin-preview", "destination": "/admin-login", "permanent": false }
+  ]
+}

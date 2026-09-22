@@ -1,0 +1,18 @@
+{
+  "name": "lume-sexshop-v7-neon",
+  "version": "7.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "node local-server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.1",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "cookie": "^1.0.2",
+    "mercadopago": "^2.12.0"
+  }
+}

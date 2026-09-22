@@ -1,0 +1,36 @@
+LUMÉ V7.1 — PACOTE LIMPO PARA DEPLOY
+
+ESTRUTURA CORRETA:
+- index.html, style.css, script.js
+- admin-login.html
+- admin.html, admin.css, admin.js
+- success.html, pending.html, failure.html
+- package.json, vercel.json
+- pasta api/ (MINÚSCULA)
+- pasta assets/
+
+IMPORTANTE NO GITHUB:
+1. Extraia este ZIP no Windows.
+2. Abra a pasta LUME-V7-1-DEPLOY-CLEAN.
+3. Envie OS ARQUIVOS E AS PASTAS QUE ESTÃO DENTRO dela para a RAIZ do repositório.
+4. Não envie o ZIP para o GitHub esperando que ele seja extraído.
+5. A pasta deve se chamar exatamente api (minúscula).
+6. Confirme que o deploy de PRODUÇÃO da Vercel está usando a mesma branch onde você fez o upload.
+
+VARIÁVEIS NECESSÁRIAS NA VERCEL:
+URL_DO_BANCO_DE_DADOS
+MP_ACCESS_TOKEN
+MP_WEBHOOK_SECRET
+RESEND_API_KEY
+RESEND_FROM_EMAIL
+STORE_ORDER_EMAIL
+PUBLIC_BASE_URL (ou URL_BASE_PUBLICA)
+ADMIN_SESSION_SECRET
+
+ROTAS ESPERADAS APÓS O DEPLOY:
+/                    loja
+/admin-login         login do ADM
+/admin               painel ADM
+/admin-preview       redireciona para /admin-login
+/api/admin-setup     configuração do primeiro administrador
+/api/webhook         webhook Mercado Pago

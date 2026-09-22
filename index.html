@@ -1,0 +1,48 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>LUMÉ — Prazer sem tabus</title><link rel="stylesheet" href="style.css"></head><body>
+<div id="age" class="age"><div class="agebox"><div class="heart">♥</div><h2>Bem-vindo à LUMÉ</h2><p>Conteúdo destinado a maiores de 18 anos.</p><button onclick="enterSite()">Tenho 18 anos ou mais</button><a href="https://www.google.com">Sair</a></div></div>
+<div class="trust"><span>🚚 Entrega Discreta para Todo o Brasil</span><span>▣ Compra 100% Segura</span><span>♢ Privacidade Garantida</span><span>☎ Precisa de ajuda? <b>(11) 98765-4321</b></span><span>♙ Minha conta</span></div>
+<header><a class="logo" href="#"><i>♥</i><div><b>LUMÉ</b><small>Prazer sem tabus</small></div></a><div class="search"><input id="search" placeholder="O que você procura hoje?"><button onclick="doSearch()">⌕</button></div><nav><a class="active" href="#">Início</a><a href="#cats">Categorias⌄</a><a href="#products">Ofertas</a><a href="#products">Mais Vendidos</a><a href="#news">Lançamentos</a><a href="#">Blog</a><a href="#">Sobre⌄</a></nav><button class="cartTop" onclick="toggleCart()">🛒 <em id="cartCount">0</em></button></header>
+<section class="hero"><img src="assets/hero.jpg" alt="Coleção LUMÉ"><div class="heroOverlay"></div><div class="heroContent"><p>DESCUBRA SUA MELHOR VERSÃO</p><h1>Prazer é<br><i>bem-estar</i></h1><h3>Mais liberdade, mais conexão, mais você.</h3><button onclick="document.querySelector('#products').scrollIntoView({behavior:'smooth'})">Ver coleções <span>→</span></button></div><div class="heroDots"><i></i><i></i><i></i></div></section>
+<section class="benefits"><div>🚚 <span><b>Entrega</b><small>para todo o Brasil</small></span></div><div>▣ <span><b>Pagamentos</b><small>100% seguros</small></span></div><div>◇ <span><b>Embalagem</b><small>discreta</small></span></div><div>♢ <span><b>Privacidade</b><small>garantida</small></span></div><div>♢ <span><b>Produtos</b><small>originais</small></span></div><div>♡ <span><b>+10 mil</b><small>clientes satisfeitos</small></span></div></section>
+<main><div class="sectionTitle"><div><h2>Categorias em destaque</h2></div><a href="#products">Ver todas →</a></div><section id="cats" class="categories"></section>
+<div class="sectionTitle productsTitle"><div><h2>Mais vendidos</h2><p>Os queridinhos de quem entende de prazer</p></div><div class="filter"><button class="on" onclick="filterProducts('Todos',this)">Todos</button><button onclick="filterProducts('Bem-estar',this)">Bem-estar</button><button onclick="filterProducts('Casais',this)">Casais</button></div></div><section id="products" class="products"></section>
+<section id="news" class="newsletter"><div class="newsShade"></div><div class="newsText"><h2>Receba ofertas exclusivas</h2><p>Cadastre-se e ganhe 10% OFF na sua primeira compra</p></div><form onsubmit="newsletter(event)"><input type="email" required placeholder="Seu melhor e-mail"><button>Quero meu desconto <b>→</b></button></form></section></main>
+<footer><a class="logo"><i>♥</i><div><b>LUMÉ</b><small>Prazer sem tabus</small></div></a><span>Institucional</span><span>Trocas e Devoluções</span><span>Política de Privacidade</span><span>Fale Conosco</span><span>Blog</span><div class="social">◎ ♪ ▶ ▣</div><b class="pay">VISA　●●　◆ PIX</b></footer>
+<div class="floatBenefits"><div>◇<span>Embalagem<br>discreta</span></div><div>▣<span>Compra<br>segura</span></div><div>♡<span>Atendimento<br>humanizado</span></div></div>
+<aside id="cart" class="cart"><div class="cartHead"><h2>Seu carrinho</h2><button onclick="toggleCart()">×</button></div><div id="cartItems" class="cartItems"></div><div class="cartFoot"><div><span>Total</span><b id="cartTotal">R$ 0,00</b></div><button id="checkoutBtn" onclick="startCheckout()">Finalizar compra com Mercado Pago</button><small class="checkoutNote">Pagamento processado no ambiente seguro do Mercado Pago.</small></div></aside><div id="overlay" class="overlay" onclick="toggleCart()"></div><div id="toast" class="toast"></div>
+
+<div id="checkoutModal" class="checkoutModal" aria-hidden="true">
+  <div class="checkoutPanel">
+    <button class="checkoutClose" type="button" onclick="closeCheckout()">×</button>
+    <div class="checkoutBrand"><span>♥</span> LUMÉ <small>Checkout seguro</small></div>
+    <div class="checkoutSteps"><span id="stepDot1" class="active">1 <b>Entrega</b></span><i></i><span id="stepDot2">2 <b>Revisão</b></span><i></i><span>3 <b>Pagamento</b></span></div>
+    <section id="deliveryStep" class="checkoutStep">
+      <h2>Dados para entrega</h2><p class="checkoutIntro">Preencha os dados do destinatário. Os campos com * são obrigatórios.</p>
+      <form id="deliveryForm" onsubmit="reviewCheckout(event)" novalidate>
+        <div class="formGrid">
+          <label class="span2">Nome completo *<input id="coName" autocomplete="name" required minlength="3" placeholder="Nome e sobrenome"></label>
+          <label>E-mail *<input id="coEmail" type="email" autocomplete="email" required placeholder="voce@email.com"></label>
+          <label>Telefone *<input id="coPhone" inputmode="tel" autocomplete="tel" required placeholder="(11) 99999-9999"></label>
+          <label>CEP *<div class="cepField"><input id="coCep" inputmode="numeric" autocomplete="postal-code" required maxlength="9" placeholder="00000-000"><button type="button" onclick="lookupCep()">Buscar</button></div><small id="cepStatus"></small></label>
+          <label>UF *<select id="coUf" required><option value="">UF</option><option>AC</option><option>AL</option><option>AP</option><option>AM</option><option>BA</option><option>CE</option><option>DF</option><option>ES</option><option>GO</option><option>MA</option><option>MT</option><option>MS</option><option>MG</option><option>PA</option><option>PB</option><option>PR</option><option>PE</option><option>PI</option><option>RJ</option><option>RN</option><option>RS</option><option>RO</option><option>RR</option><option>SC</option><option>SP</option><option>SE</option><option>TO</option></select></label>
+          <label class="span2">Endereço *<input id="coStreet" autocomplete="address-line1" required placeholder="Rua / Avenida"></label>
+          <label>Número *<input id="coNumber" autocomplete="address-line2" required placeholder="123"></label>
+          <label>Complemento <input id="coComplement" placeholder="Apto, bloco, casa..."></label>
+          <label>Bairro *<input id="coDistrict" required placeholder="Bairro"></label>
+          <label>Cidade *<input id="coCity" autocomplete="address-level2" required placeholder="Cidade"></label>
+        </div>
+        <label class="privacyCheck"><input id="coPrivacy" type="checkbox" required> Confirmo que os dados estão corretos e autorizo seu uso para processar e entregar este pedido. *</label>
+        <div class="checkoutActions"><button type="button" class="secondary" onclick="closeCheckout()">Voltar ao carrinho</button><button type="submit" class="primary">Revisar pedido →</button></div>
+      </form>
+    </section>
+    <section id="reviewStep" class="checkoutStep" hidden>
+      <h2>Revise seu pedido</h2><p class="checkoutIntro">Confira os produtos e o endereço antes de seguir para o Mercado Pago.</p>
+      <div id="reviewItems" class="reviewItems"></div>
+      <div class="reviewBox"><div><span>Entrega para</span><b id="reviewName"></b><p id="reviewAddress"></p><p id="reviewContact"></p></div><button type="button" onclick="backToDelivery()">Editar</button></div>
+      <div class="reviewTotal"><span>Total do pedido</span><b id="reviewTotal"></b></div>
+      <div class="checkoutActions"><button type="button" class="secondary" onclick="backToDelivery()">← Voltar</button><button id="payBtn" type="button" class="primary" onclick="submitPayment()">Ir para o Mercado Pago →</button></div>
+      <p class="secureLine">▣ Pagamento processado no ambiente seguro do Mercado Pago.</p>
+    </section>
+  </div>
+</div>
+<script src="script.js"></script></body></html>
