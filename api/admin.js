@@ -7,6 +7,7 @@ const {
   sessionCookie,
   clearCookie
 } = require('../lib/auth');
+
 const { sendStatusEmail } = require('../lib/mailer');
 
 const allowed = {
@@ -19,9 +20,7 @@ const allowed = {
 const action = (req) => String(req.query?.action || '').trim();
 
 /**
- * Garante que o corpo da requisição seja sempre um objeto.
- * Dependendo da execução na Vercel, req.body pode chegar
- * como objeto ou como string JSON.
+ * Garante que req.body seja um objeto.
  */
 function getBody(req) {
   let body = req.body || {};
@@ -38,19 +37,25 @@ function getBody(req) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader(
+    'Content-Type',
+    'application/json; charset=utf-8'
+  );
 
   try {
+
     const a = action(req);
     const sql = db();
 
     // =========================================================
-    // SETUP - CRIAÇÃO DO PRIMEIRO ADMINISTRADOR
+    // SETUP - PRIMEIRO ADMINISTRADOR
     // =========================================================
 
     if (a === 'setup') {
 
+      // Verifica se precisa criar administrador
       if (req.method === 'GET') {
+
         const r = await sql`
           SELECT count(*)::int AS count
           FROM admin_users
@@ -68,6 +73,7 @@ module.exports = async (req, res) => {
         });
       }
 
+      // Verifica se já existe administrador
       const c = await sql`
         SELECT count(*)::int AS count
         FROM admin_users
@@ -79,25 +85,46 @@ module.exports = async (req, res) => {
         });
       }
 
+      // =======================================================
+      // LEITURA DO FORMULÁRIO
+      // =======================================================
+
       const body = getBody(req);
 
       const name = String(body.name || '').trim();
-      const email = String(body.email || '').trim().toLowerCase();
+
+      const email = String(body.email || '')
+        .trim()
+        .toLowerCase();
+
       const password = String(body.password || '');
 
       const emailValido =
         /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+
+      // =======================================================
+      // DIAGNÓSTICO TEMPORÁRIO
+      // NÃO RETORNA A SENHA.
+      // SOMENTE O TAMANHO RECEBIDO.
+      // =======================================================
 
       if (
         name.length < 2 ||
         !emailValido ||
         password.length < 10
       ) {
+
         return res.status(400).json({
           error:
-            'Informe nome, e-mail válido e senha com pelo menos 10 caracteres.'
+            `DIAGNÓSTICO — nome:${name.length} | ` +
+            `email:${emailValido} | ` +
+            `senha:${password.length}`
         });
       }
+
+      // =======================================================
+      // CRIAÇÃO DO ADMINISTRADOR
+      // =======================================================
 
       const hash = await bcrypt.hash(password, 12);
 
@@ -159,8 +186,12 @@ module.exports = async (req, res) => {
 
       if (
         !u[0] ||
-        !(await bcrypt.compare(password, u[0].password_hash))
+        !(await bcrypt.compare(
+          password,
+          u[0].password_hash
+        ))
       ) {
+
         return res.status(401).json({
           error: 'E-mail ou senha inválidos.'
         });
@@ -168,7 +199,9 @@ module.exports = async (req, res) => {
 
       res.setHeader(
         'Set-Cookie',
-        sessionCookie(makeToken(u[0]))
+        sessionCookie(
+          makeToken(u[0])
+        )
       );
 
       return res.json({
@@ -182,6 +215,7 @@ module.exports = async (req, res) => {
     // =========================================================
 
     if (a === 'logout') {
+
       res.setHeader(
         'Set-Cookie',
         clearCookie()
@@ -193,16 +227,17 @@ module.exports = async (req, res) => {
     }
 
     // =========================================================
-    // A PARTIR DAQUI EXIGE LOGIN
+    // DAQUI PARA BAIXO EXIGE LOGIN
     // =========================================================
 
     const admin = requireAdmin(req);
 
     // =========================================================
-    // ADMIN ATUAL
+    // USUÁRIO LOGADO
     // =========================================================
 
     if (a === 'me') {
+
       return res.json({
         user: admin
       });
@@ -226,14 +261,21 @@ module.exports = async (req, res) => {
                 'total_price', i.total_price
               )
             )
-            FILTER (WHERE i.id IS NOT NULL),
+            FILTER (
+              WHERE i.id IS NOT NULL
+            ),
             '[]'
           ) AS items
+
         FROM orders o
+
         LEFT JOIN order_items i
           ON i.order_id = o.id
+
         GROUP BY o.id
+
         ORDER BY o.created_at DESC
+
         LIMIT 1000
       `;
 
@@ -248,7 +290,9 @@ module.exports = async (req, res) => {
 
     if (a === 'history') {
 
-      const id = Number(req.query?.id);
+      const id = Number(
+        req.query?.id
+      );
 
       if (!id) {
         return res.status(400).json({
@@ -269,7 +313,7 @@ module.exports = async (req, res) => {
     }
 
     // =========================================================
-    // ALTERAÇÃO DE STATUS
+    // ALTERAÇÃO DO STATUS
     // =========================================================
 
     if (a === 'status') {
@@ -282,10 +326,17 @@ module.exports = async (req, res) => {
 
       const body = getBody(req);
 
-      const status = String(body.status || '');
-      const id = Number(body.id);
+      const status =
+        String(body.status || '');
 
-      if (!allowed[status] || !id) {
+      const id =
+        Number(body.id);
+
+      if (
+        !allowed[status] ||
+        !id
+      ) {
+
         return res.status(400).json({
           error: 'Pedido/status inválido.'
         });
@@ -299,7 +350,9 @@ module.exports = async (req, res) => {
           customer_email,
           order_status,
           payment_status
+
         FROM orders
+
         WHERE id = ${id}
       `;
 
@@ -311,14 +364,20 @@ module.exports = async (req, res) => {
 
       const o = rows[0];
 
-      if (o.payment_status !== 'processed') {
+      if (
+        o.payment_status !== 'processed'
+      ) {
+
         return res.status(409).json({
           error:
             'Só é possível alterar o fluxo após o pagamento confirmado.'
         });
       }
 
-      if (o.order_status === status) {
+      if (
+        o.order_status === status
+      ) {
+
         return res.json({
           ok: true,
           email_sent: false
@@ -327,9 +386,11 @@ module.exports = async (req, res) => {
 
       await sql`
         UPDATE orders
+
         SET
           order_status = ${status},
           updated_at = NOW()
+
         WHERE id = ${id}
       `;
 
@@ -340,6 +401,7 @@ module.exports = async (req, res) => {
           new_status,
           changed_by
         )
+
         VALUES (
           ${id},
           ${o.order_status},
@@ -352,8 +414,14 @@ module.exports = async (req, res) => {
       let email_error = null;
 
       try {
-        await sendStatusEmail(o, status);
+
+        await sendStatusEmail(
+          o,
+          status
+        );
+
       } catch (e) {
+
         email_sent = false;
         email_error = e.message;
       }
@@ -366,19 +434,27 @@ module.exports = async (req, res) => {
     }
 
     // =========================================================
-    // AÇÃO NÃO ENCONTRADA
+    // AÇÃO INEXISTENTE
     // =========================================================
 
     return res.status(404).json({
-      error: 'Ação administrativa não encontrada.'
+      error:
+        'Ação administrativa não encontrada.'
     });
 
   } catch (e) {
 
-    console.error('admin api', e);
+    console.error(
+      'admin api',
+      e
+    );
 
-    return res.status(e.status || 500).json({
-      error: e.message || 'Erro interno.'
-    });
+    return res
+      .status(e.status || 500)
+      .json({
+        error:
+          e.message ||
+          'Erro interno.'
+      });
   }
 };
