@@ -1,1 +1,0 @@
-const {requireAdmin}=require('./_auth');module.exports=(req,res)=>{try{return res.json({user:requireAdmin(req)})}catch(e){return res.status(e.status||500).json({error:e.message})}};
