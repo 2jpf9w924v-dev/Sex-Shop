@@ -1,7 +1,2 @@
-module.exports=async function handler(req,res){
-  // O webhook confirma eventos no servidor. Em produção, valide a assinatura x-signature
-  // conforme a documentação do Mercado Pago e grave o pedido em um banco de dados.
-  if(req.method!=='POST') return res.status(405).end();
-  console.log('Webhook Mercado Pago',JSON.stringify(req.body||{}));
-  res.status(200).json({received:true});
-}
+const {WebhookSignatureValidator,InvalidWebhookSignatureError}=require('mercadopago');const {syncOrder}=require('./_sync-order');
+module.exports=async(req,res)=>{if(req.method!=='POST')return res.status(405).end();try{const secret=(process.env.MP_WEBHOOK_SECRET||'').trim();if(!secret)return res.status(503).json({error:'MP_WEBHOOK_SECRET não configurado.'});WebhookSignatureValidator.validate({xSignature:req.headers['x-signature'],xRequestId:req.headers['x-request-id'],dataId:req.query?.['data.id']||req.body?.data?.id,secret});const id=String(req.query?.['data.id']||req.body?.data?.id||'');if(id)await syncOrder(id);return res.status(200).json({received:true})}catch(e){if(e instanceof InvalidWebhookSignatureError)return res.status(401).json({error:'Assinatura inválida.'});console.error('webhook',e);return res.status(500).json({error:'Falha no webhook.'})}}
