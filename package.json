@@ -2,7 +2,7 @@
   "name": "lume-sexshop-v7-2-hobby",
   "version": "7.2.0",
   "private": true,
-  "engines": { "node": "20.x" },
+  "engines": { "node": "24.x" },
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
     "bcryptjs": "^3.0.2",
