@@ -1,0 +1,32 @@
+LUMÉ V7.2 — VERCEL HOBBY
+
+Esta versão reduz o backend para 4 Serverless Functions:
+- /api/admin
+- /api/checkout
+- /api/order
+- /api/webhook
+
+Os módulos auxiliares ficam em /lib e não são endpoints públicos.
+
+Variáveis necessárias na Vercel:
+- URL_DO_BANCO_DE_DADOS
+- MP_ACCESS_TOKEN
+- MP_WEBHOOK_SECRET
+- RESEND_API_KEY
+- RESEND_FROM_EMAIL
+- STORE_ORDER_EMAIL
+- PUBLIC_BASE_URL (ou URL_BASE_PUBLICA)
+- ADMIN_SESSION_SECRET
+
+Deploy:
+1. Apague a pasta api antiga do GitHub.
+2. Suba TODO o conteúdo desta pasta para a raiz do repositório.
+3. Confirme que api contém SOMENTE: admin.js, checkout.js, order.js, webhook.js.
+4. Faça o commit na branch main.
+5. Aguarde o deployment da Vercel.
+
+Rotas:
+- /                  Loja
+- /admin-login       Login/criação do primeiro admin
+- /admin             Painel
+- /api/webhook       Webhook Mercado Pago
